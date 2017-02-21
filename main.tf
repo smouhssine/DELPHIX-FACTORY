@@ -1,6 +1,6 @@
 # Provided by Mouhssine SAIDI COE free to use and distribute as is
 
-# This terraform file aint to automate the delphix engine 
+# This terraform file is to automate the delphix engine 
 # install and configuration it only focuses on Vcenter topology
 
 #############################################
@@ -24,20 +24,22 @@ variable "esx_password" {
     description = "ESX user password"
 }
 
+#Provide one or more data datastores name
 variable "delphix_data_datastores" {
     default = "DELPHIX_DS_KAM-01,DELPHIX_DS_KAM-02,DELPHIX_DS_KAM-03"
     description = "Existing datastore to host the delphix os vmdk"
+}
+
+#Notice indicated vmdk will be created under the list of datastores provided befor (you shou at leat have one or the same number as vmks files)
+variable "delphix_data_vmdks" {
+    default = "Delphix_Engine/Delphix_Engine-000001.vmdk,Delphix_Engine/Delphix_Engine-000002.vmdk,Delphix_Engine/Delphix_Engine-000003.vmdk"
+    description = "Path to delphix engine vmdks, exclude datastore name in path"
 }
 
 variable "delphixos_datastore" {
 # use commande "govc ls datastore" to get datastores list
     default = "DELPHIX_DS_OS"
     description = "Existing datastore to host the delphix os vmdk "
-}
-
-variable "delphix_data_vmdks" {
-    default = "Delphix_Engine/Delphix_Engine-000001.vmdk,Delphix_Engine/Delphix_Engine-000002.vmdk,Delphix_Engine/Delphix_Engine-000003.vmdk"
-    description = "Path to delphix engine vmdks, exclude datastore name in path"
 }
 
 variable "data_vmdk_size" {
@@ -118,7 +120,7 @@ resource "null_resource" "CREATE-DATA-DISKS" {
       count = "${length(split(",", var.delphix_data_datastores))}"
    provisioner "local-exec" {
     #This provisioner is to create delphix data vmdks
-      command="echo \"Step 2 :About to attach data disks to the engine vm\n\";  export GOVC_URL=${var.esx_ip}; export GOVC_USERNAME=${var.esx_user}; export GOVC_PASSWORD=${var.esx_password}; export GOVC_DATASTORE=${element(split(",", var.delphix_data_datastores), count.index)};export GOVC_VM=${var.delphix_vm_path}; /usr/local/bin/govc vm.disk.create -name=${element(split(",", var.delphix_data_vmdks), count.index)} -size={var.data_vmdk_size}"
+      command="echo \"Step 2 :About to attach data disks to the engine vm\n\";  export GOVC_URL=${var.esx_ip}; export GOVC_USERNAME=${var.esx_user}; export GOVC_PASSWORD=${var.esx_password}; export GOVC_DATASTORE=${element(split(",", var.delphix_data_datastores), count.index)};export GOVC_VM=${var.delphix_vm_path}; export GOVC_INSECURE=1; /usr/local/bin/govc vm.disk.create -name=${element(split(",", var.delphix_data_vmdks), count.index)} -size={var.data_vmdk_size}"
   }
      depends_on = ["null_resource.OVA-LOAD"]
 }
@@ -171,4 +173,9 @@ resource "null_resource" "DELPHIX-ADMIN-USER-SETUP" {
      command="echo \"Step 5: About to set delphix_admin user\n\"; python  /home/delphix/delphix_factory/delphix_admin_setup.py -e ${var.engine_ip} -o ${var.delphixadmin_old} -p ${var.delphixadmin_pass}"
   }
      depends_on = ["null_resource.ENGINE-DOMAIN-AND-SYSADMIN-USER-SETUP"]
+}
+
+
+  output "DELPHIX_ENGINE" {
+    value = ["Delphix Engine - Public IP: ${var.engine_ip}\n    Access via http://${var.engine_ip}\n    Username: delphix_admin Password: ${var.delphixadmin_pass}"]
 }
