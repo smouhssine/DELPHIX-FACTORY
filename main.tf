@@ -9,6 +9,11 @@
 #                                           #
 #############################################
 
+variable "project_dir" {
+    default = "/home/delphix/delphix_factory"
+    description = "Factory project dir containing scripts"
+}
+
 variable "esx_ip" {
     default = "172.24.0.33"
     description = "Esx deployment targets list comma separated"
@@ -151,7 +156,7 @@ resource "null_resource" "POWER-ON-ENGINE" {
 resource "null_resource" "ENGINE-NETWORK-ASSIGNEMENT" {
    provisioner "local-exec" {
     #This provisioner is to undo the workaround
-     command="echo \"Step 3 :About to assigne network configuration to the engine\n\"; python /home/delphix/delphixpy/engine_network_assignment.py -e $(export GOVC_URL=172.24.0.31; export GOVC_USERNAME=root; export GOVC_PASSWORD=hpinvent; export GOVC_INSECURE=1; /usr/local/bin/govc vm.ip /ha-datacenter/vm/Delphix_Source) -n ${var.engine_ip}/16 -p ${var.sysadmin_old} -g ${var.default_gw} -d ${var.dns}"
+     command="echo \"Step 3 :About to assigne network configuration to the engine\n\"; python ${var.project_dir}/engine_network_assignment.py -e $(export GOVC_URL=172.24.0.31; export GOVC_USERNAME=root; export GOVC_PASSWORD=hpinvent; export GOVC_INSECURE=1; /usr/local/bin/govc vm.ip /ha-datacenter/vm/Delphix_Source) -n ${var.engine_ip}/16 -p ${var.sysadmin_old} -g ${var.default_gw} -d ${var.dns}"
   }
      depends_on = ["null_resource.POWER-ON-ENGINE"]
 }
@@ -161,7 +166,7 @@ resource "null_resource" "ENGINE-NETWORK-ASSIGNEMENT" {
 resource "null_resource" "ENGINE-DOMAIN-AND-SYSADMIN-USER-SETUP" {
    provisioner "local-exec" {
     #This provisioner is to configure sysadmin and set domain0
-     command="echo \"Step 4: About to ser the domain and sysadmin user\n\"; python /home/delphix/delphix_factory/engine_setup.py -e ${var.engine_ip} -o ${var.sysadmin_old} -p ${var.sysadmin_pass}"
+     command="echo \"Step 4: About to ser the domain and sysadmin user\n\"; python ${var.project_dir}/engine_setup.py -e ${var.engine_ip} -o ${var.sysadmin_old} -p ${var.sysadmin_pass}"
   }
      depends_on = ["null_resource.ENGINE-NETWORK-ASSIGNEMENT"]
 }
@@ -170,7 +175,7 @@ resource "null_resource" "ENGINE-DOMAIN-AND-SYSADMIN-USER-SETUP" {
 resource "null_resource" "DELPHIX-ADMIN-USER-SETUP" {
    provisioner "local-exec" {
     #This provisioner is to configure delphix_admin account
-     command="echo \"Step 5: About to set delphix_admin user\n\"; python  /home/delphix/delphix_factory/delphix_admin_setup.py -e ${var.engine_ip} -o ${var.delphixadmin_old} -p ${var.delphixadmin_pass}"
+     command="echo \"Step 5: About to set delphix_admin user\n\"; python  ${var.project_dir}/delphix_admin_setup.py -e ${var.engine_ip} -o ${var.delphixadmin_old} -p ${var.delphixadmin_pass}"
   }
      depends_on = ["null_resource.ENGINE-DOMAIN-AND-SYSADMIN-USER-SETUP"]
 }
