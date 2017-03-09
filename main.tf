@@ -148,7 +148,7 @@ resource "null_resource" "POWER-ON-ENGINE" {
     #This provisioner is to start vm
       command="echo \"Step 2 :About to start the engine vm\n\"; export GOVC_URL=${var.esx_ip}; export GOVC_USERNAME=${var.esx_user}; export GOVC_PASSWORD=${var.esx_password} ;export GOVC_INSECURE=1; /usr/local/bin/govc vm.power -on ${var.delphix_vm_path}"
   }
-     depends_on = ["null_resource.ADD-DATA-DISKS"]
+     depends_on = ["null_resource.ATTACH-DATA-DISKS"]
 }
 
 # Call engine_network_assignment.py script to configure the engine network
